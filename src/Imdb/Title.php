@@ -1860,19 +1860,57 @@ class Title extends MdbBase {
 
  #======================================================[ /soundtrack page ]===
  #------------------------------------------------------[ Soundtrack Array ]---
-  /** Get the soundtrack listing
-   * @method soundtrack
-   * @return array soundtracks (array[0..n] of array(soundtrack,array[0..n] of credits array[credit_to,desc])
+  /**
+   * Get the soundtrack listing
+   * @return array soundtracks
+   * [ soundtrack : name of the track
+   *   credits_full : Full text only description of the credits. Contains newline characters
+   *   credits_raw : The credits as they are on the imdb page. Contains html with links
+   *   credits: array of [
+   *     credit_to: Artist/company. May contain <a> link to name page
+   *     desc: role of the credited artist/company. e.g. writer, courtesy, license
+   *   ]
+   * ]
+   * e.g
+   * <pre>[
+   *   [
+   *     'soundtrack' => 'Rock is Dead',
+   *     'credits_full' => 'Written by Marilyn Manson, Jeordie White, and Madonna Wayne Gacy
+  Performed by Marilyn Manson
+  Courtesy of Nothing/Interscope Records
+  Under License from Universal Music Special Markets',
+   *     'credits_raw' => 'Written by <a href="/name/nm0001504?ref_=ttsnd_snd_12">Marilyn Manson</a>, <a href="/name/nm0708390?ref_=ttsnd_snd_12">Jeordie White</a>, and <a href="/name/nm0300476?ref_=ttsnd_snd_12">Madonna Wayne Gacy</a><br />
+  Performed by <a href="/name/nm0001504?ref_=ttsnd_snd_12">Marilyn Manson</a><br />
+  Courtesy of Nothing/Interscope Records<br />
+  Under License from Universal Music Special Markets<br />',
+   *     'credits' => [
+   *       [
+   *         'credit_to' => '<a href="http://www.imdb.com/name/nm0001504?ref_=ttsnd_snd_12">Marilyn Manson</a>',
+   *         'desc' => 'writer'
+   *       ],
+   *       [
+   *         'credit_to' => 'Nothing/Interscope Records',
+   *         'desc' => 'courtesy'
+   *       ],
+   *       [
+   *         'credit_to' => 'Universal Music Special Markets',
+   *         'desc' => 'license'
+   *       ]
+   *     ]
+   *   ]
+   * ]</pre>
    * @see IMDB page /soundtrack
    */
   public function soundtrack() {
    if (empty($this->soundtracks)) {
      $page = $this->getPage("Soundtrack");
      if (empty($page)) return array(); // no such page
-     if (preg_match_all('!class="soundTrack soda (odd|even)"\s*>\s*(?<title>.+?)<br\s*/>(?<desc>.+?)</div>!ims',str_replace("\n"," ",$this->page["Soundtrack"]),$matches)) {
+     if (preg_match_all('!class="soundTrack soda (odd|even)"\s*>\s*(?<title>.+?)<br\s*/>(?<desc>.+?)</div>!ims', $page, $matches)) {
         $mc = count($matches[0]);
         for ($i=0;$i<$mc;++$i) {
           $s['soundtrack'] = $matches['title'][$i];
+          $s['credits_raw'] = trim($matches['desc'][$i]);
+          $s['credits_full'] = trim(strip_tags($matches['desc'][$i]));
           $s['credits'] = array();
           if ( preg_match_all('|^\s*(.*?)\s+by\s+(<a href[^>]+>.+?</a>)|i',$matches['desc'][$i],$match1) ) {
             for ($k=0;$k<count($match1[0]);++$k) {
