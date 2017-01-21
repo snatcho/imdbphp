@@ -1864,39 +1864,21 @@ class Title extends MdbBase {
    * Get the soundtrack listing
    * @return array soundtracks
    * [ soundtrack : name of the track
-   *   credits_full : Full text only description of the credits. Contains newline characters
+   *   credits : Full text only description of the credits. Contains newline characters
    *   credits_raw : The credits as they are on the imdb page. Contains html with links
-   *   credits: array of [
-   *     credit_to: Artist/company. May contain <a> link to name page
-   *     desc: role of the credited artist/company. e.g. writer, courtesy, license
-   *   ]
    * ]
    * e.g
    * <pre>[
    *   [
    *     'soundtrack' => 'Rock is Dead',
-   *     'credits_full' => 'Written by Marilyn Manson, Jeordie White, and Madonna Wayne Gacy
+   *     'credits' => 'Written by Marilyn Manson, Jeordie White, and Madonna Wayne Gacy
   Performed by Marilyn Manson
   Courtesy of Nothing/Interscope Records
   Under License from Universal Music Special Markets',
-   *     'credits_raw' => 'Written by <a href="/name/nm0001504?ref_=ttsnd_snd_12">Marilyn Manson</a>, <a href="/name/nm0708390?ref_=ttsnd_snd_12">Jeordie White</a>, and <a href="/name/nm0300476?ref_=ttsnd_snd_12">Madonna Wayne Gacy</a><br />
-  Performed by <a href="/name/nm0001504?ref_=ttsnd_snd_12">Marilyn Manson</a><br />
-  Courtesy of Nothing/Interscope Records<br />
-  Under License from Universal Music Special Markets<br />',
-   *     'credits' => [
-   *       [
-   *         'credit_to' => '<a href="http://www.imdb.com/name/nm0001504?ref_=ttsnd_snd_12">Marilyn Manson</a>',
-   *         'desc' => 'writer'
-   *       ],
-   *       [
-   *         'credit_to' => 'Nothing/Interscope Records',
-   *         'desc' => 'courtesy'
-   *       ],
-   *       [
-   *         'credit_to' => 'Universal Music Special Markets',
-   *         'desc' => 'license'
-   *       ]
-   *     ]
+   *     'credits_raw' => 'Written by <a href="/name/nm0001504">Marilyn Manson</a>, <a href="/name/nm0708390">Jeordie White</a>, and <a href="/name/nm0300476">Madonna Wayne Gacy</a> <br />
+  Performed by <a href="/name/nm0001504">Marilyn Manson</a> <br />
+  Courtesy of Nothing/Interscope Records <br />
+  Under License from Universal Music Special Markets <br />',
    *   ]
    * ]</pre>
    * @see IMDB page /soundtrack
@@ -1905,58 +1887,13 @@ class Title extends MdbBase {
    if (empty($this->soundtracks)) {
      $page = $this->getPage("Soundtrack");
      if (empty($page)) return array(); // no such page
-     if (preg_match_all('!class="soundTrack soda (odd|even)"\s*>\s*(?<title>.+?)<br\s*/>(?<desc>.+?)</div>!ims', $page, $matches)) {
-        $mc = count($matches[0]);
-        for ($i=0;$i<$mc;++$i) {
-          $s['soundtrack'] = $matches['title'][$i];
-          $s['credits_raw'] = trim($matches['desc'][$i]);
-          $s['credits_full'] = trim(strip_tags($matches['desc'][$i]));
-          $s['credits'] = array();
-          if ( preg_match_all('|^\s*(.*?)\s+by\s+(<a href[^>]+>.+?</a>)|i',$matches['desc'][$i],$match1) ) {
-            for ($k=0;$k<count($match1[0]);++$k) {
-              switch ($match1[1][$k]) {
-                case "Arranged" : $s['credits'][] = array('credit_to'=>str_replace('href="/','href="http://'.$this->imdbsite.'/',$match1[2][$k]), 'desc'=>'arrangement'); break;
-                case "Composed" : $s['credits'][] = array('credit_to'=>str_replace('href="/','href="http://'.$this->imdbsite.'/',$match1[2][$k]), 'desc'=>'composer'); break;
-                case "Performed": $s['credits'][] = array('credit_to'=>str_replace('href="/','href="http://'.$this->imdbsite.'/',$match1[2][$k]), 'desc'=>'performer'); break;
-                case "Written"  : $s['credits'][] = array('credit_to'=>str_replace('href="/','href="http://'.$this->imdbsite.'/',$match1[2][$k]), 'desc'=>'writer'); break;
-                case "Written and Produced": {
-                  $s['credits'][] = array('credit_to'=>str_replace('href="/','href="http://'.$this->imdbsite.'/',$match1[2][$k]), 'desc'=>'writer');
-                  $s['credits'][] = array('credit_to'=>str_replace('href="/','href="http://'.$this->imdbsite.'/',$match1[2][$k]), 'desc'=>'producer');
-                } break;
-                case "Written and Performed": {
-                  $s['credits'][] = array('credit_to'=>str_replace('href="/','href="http://'.$this->imdbsite.'/',$match1[2][$k]), 'desc'=>'writer');
-                  $s['credits'][] = array('credit_to'=>str_replace('href="/','href="http://'.$this->imdbsite.'/',$match1[2][$k]), 'desc'=>'performer');
-                } break;
-                default: $s['credits'][] = array('credit_to'=>str_replace('href="/','href="http://'.$this->imdbsite.'/',$match1[2][$k]), 'desc'=>'**'.$match1[1][$k].'**');
-              }
-            }
-          } elseif ( preg_match_all('|\s*([^>]*)\s+by\s+([^<]+)|i',$matches['desc'][$i],$match1) ) { // creditors without link
-            for ($k=0;$k<count($match1[0]);++$k) {
-              if ( preg_match('!(.+)\s+and\s+(.+)!',$match1[2][$k],$cr) ) $creds = array($cr[1],$cr[2]);
-              else $creds = array($match1[2][$k]);
-              switch ($match1[1][$k]) {
-                case "Arranged" : foreach ($creds as $cred) $s['credits'][] = array('credit_to'=>str_replace('href="/','href="http://'.$this->imdbsite.'/',$cred), 'desc'=>'arrangement'); break;
-                case "Composed" : foreach ($creds as $cred) $s['credits'][] = array('credit_to'=>str_replace('href="/','href="http://'.$this->imdbsite.'/',$cred), 'desc'=>'composer'); break;
-                case "Performed": foreach ($creds as $cred) $s['credits'][] = array('credit_to'=>str_replace('href="/','href="http://'.$this->imdbsite.'/',$cred), 'desc'=>'performer'); break;
-                case "Written"  : foreach ($creds as $cred) $s['credits'][] = array('credit_to'=>str_replace('href="/','href="http://'.$this->imdbsite.'/',$cred), 'desc'=>'writer'); break;
-                case "Written and Produced": foreach ($creds as $cred) {
-                     $s['credits'][] = array('credit_to'=>str_replace('href="/','href="http://'.$this->imdbsite.'/',$cred), 'desc'=>'writer');
-                     $s['credits'][] = array('credit_to'=>str_replace('href="/','href="http://'.$this->imdbsite.'/',$cred), 'desc'=>'producer');
-                   }
-                   break;
-                case "Written and Performed": foreach ($creds as $cred) {
-                     $s['credits'][] = array('credit_to'=>str_replace('href="/','href="http://'.$this->imdbsite.'/',$cred), 'desc'=>'writer');
-                     $s['credits'][] = array('credit_to'=>str_replace('href="/','href="http://'.$this->imdbsite.'/',$cred), 'desc'=>'performer');
-                   }
-                   break;
-                default: foreach ($creds as $cred) $s['credits'][] = array('credit_to'=>str_replace('href="/','href="http://'.$this->imdbsite.'/',$cred), 'desc'=>'**'.$match1[1][$k].'**'); break;
-              }
-            }
-          }
-          if ( preg_match('|Courtesy of\s+([^<]+)<|i',$matches['desc'][$i],$match) ) $s['credits'][] = array('credit_to'=>$match[1], 'desc'=>'courtesy');
-          if ( preg_match('|By Arrangement with\s+([^<]+)<|i',$matches['desc'][$i],$match) ) $s['credits'][] = array('credit_to'=>$match[1], 'desc'=>'arrangement');
-          if ( preg_match('|Under license from\s+([^<]+)<|i',$matches['desc'][$i],$match) ) $s['credits'][] = array('credit_to'=>$match[1], 'desc'=>'license');
-          $this->soundtracks[] = $s;
+     if (preg_match_all('!class="soundTrack soda (odd|even)"\s*>\s*(?<title>.+?)<br\s*/>(?<desc>.+?)</div>!ims', $page, $matches, PREG_SET_ORDER)) {
+        foreach ($matches as $match) {
+          $this->soundtracks[] = array(
+            'soundtrack' => trim($match['title']),
+            'credits' => preg_replace("/\s*\n\s*/", "\n", trim(strip_tags($match['desc']))),
+            'credits_raw' => trim($match['desc'])
+          );
         }
      }
    }

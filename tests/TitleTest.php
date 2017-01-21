@@ -935,7 +935,6 @@ class imdb_titleTest extends PHPUnit_Framework_TestCase {
         $this->assertEmpty($result);
     }
 
-    // This function doesn't really work very well
     public function testSoundtrack_matrix() {
         $imdb = $this->getImdb();
         $result = $imdb->soundtrack();
@@ -947,15 +946,11 @@ class imdb_titleTest extends PHPUnit_Framework_TestCase {
         $this->assertEquals("Written by Marilyn Manson, Jeordie White, and Madonna Wayne Gacy
 Performed by Marilyn Manson
 Courtesy of Nothing/Interscope Records
-Under License from Universal Music Special Markets", $rid['credits_full']);
-        $this->assertEquals("Written by <a href=\"/name/nm0001504?ref_=ttsnd_snd_12\">Marilyn Manson</a>, <a href=\"/name/nm0708390?ref_=ttsnd_snd_12\">Jeordie White</a>, and <a href=\"/name/nm0300476?ref_=ttsnd_snd_12\">Madonna Wayne Gacy</a><br />
-Performed by <a href=\"/name/nm0001504?ref_=ttsnd_snd_12\">Marilyn Manson</a><br />
-Courtesy of Nothing/Interscope Records<br />
-Under License from Universal Music Special Markets<br />", $rid['credits_raw']);
-        // should be 5 writer credits, 1 performer, 1 courtesy and 1 arrangement
-//        $this->assertEquals(8, count($dg['credits']), "Incorrect number of credits");
-//        $this->assertEquals('writer', $dg['credits'][0]['desc']);
-//        $this->assertEquals('<a href="http://'.$imdb->imdbsite.'/name/nm1128020/?ref_=ttsnd_snd_1">Robert del Naja</a>', $dg['credits'][0]['credit_to']);
+Under License from Universal Music Special Markets", $rid['credits']);
+        $this->assertEquals("Written by <a href=\"/name/nm0001504/\">Marilyn Manson</a>, <a href=\"/name/nm0708390/\">Jeordie White</a>, and <a href=\"/name/nm0300476/\">Madonna Wayne Gacy</a> <br />
+Performed by <a href=\"/name/nm0001504/\">Marilyn Manson</a> <br />
+Courtesy of Nothing/Interscope Records <br />
+Under License from Universal Music Special Markets <br />", $rid['credits_raw']);
     }
 
     public function test_locations() {
